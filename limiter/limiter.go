@@ -2,7 +2,7 @@ package limiter
 
 import (
 	"context"
-	"github.com/andrelmm/goexpert-go-rate-limiter/pkg/storage"
+	"github.com/andrelmm/goexpert-go-rate-limiter/storage"
 	"github.com/go-redis/redis/v8"
 	"log"
 	"os"

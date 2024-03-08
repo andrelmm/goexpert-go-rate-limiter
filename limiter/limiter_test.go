@@ -2,9 +2,9 @@ package limiter
 
 import (
 	"context"
-	"fmt"
-	"github.com/andrelmm/goexpert-go-rate-limiter/pkg/storage"
+	"github.com/andrelmm/goexpert-go-rate-limiter/storage"
 	"github.com/go-redis/redis/v8"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"log"
 	"os"
@@ -18,9 +18,6 @@ var rdb *redis.Client
 func TestMain(m *testing.M) {
 	rdb = connectToRedis()
 	defer rdb.Close()
-
-	cleanupRedis(rdb)
-
 	os.Exit(m.Run())
 }
 
@@ -97,6 +94,7 @@ func (m *MockStorage) Get(ctx context.Context, key string) *redis.StringCmd {
 }
 
 func TestCheckRateLimit_Positive(t *testing.T) {
+	cleanupRedis(rdb)
 	os.Setenv("RATE_LIMIT_DURATION", "1s")
 	os.Setenv("RATE_LIMIT_TOKEN", "10")
 	storage := storage.NewRedisStorage(rdb)
@@ -110,6 +108,7 @@ func TestCheckRateLimit_Positive(t *testing.T) {
 }
 
 func TestCheckRateLimit_Negative(t *testing.T) {
+	cleanupRedis(rdb)
 	os.Setenv("RATE_LIMIT_DURATION", "10s")
 	os.Setenv("RATE_LIMIT_TOKEN", "10")
 	storage := storage.NewRedisStorage(rdb)
@@ -118,11 +117,8 @@ func TestCheckRateLimit_Negative(t *testing.T) {
 	key := "apikey:test"
 	for i := 0; i < 11; i++ {
 		if i < 10 {
-			//print the current iteration concatenated with the string "<10"
-			fmt.Println(i, "<10")
 			assert.True(t, lim.CheckRateLimit(key, true), "Request should be allowed")
 		} else {
-			fmt.Println(i, ">10")
 			assert.False(t, lim.CheckRateLimit(key, true), "Request should be blocked")
 		}
 		time.Sleep(100 * time.Millisecond)
@@ -130,21 +126,23 @@ func TestCheckRateLimit_Negative(t *testing.T) {
 }
 
 func TestBlock_Positive(t *testing.T) {
+	cleanupRedis(rdb)
 	os.Setenv("BLOCK_DURATION", "1s")
 	storage := storage.NewRedisStorage(rdb)
 	lim := NewLimiter(storage)
 
-	key := "apikey:test"
+	key := uuid.New().String()
 	lim.Block(key)
 
 	assert.True(t, lim.IsBlocked(key), "Should be blocked")
 }
 
 func TestBlock_Negative(t *testing.T) {
+	cleanupRedis(rdb)
 	os.Setenv("BLOCK_DURATION", "1s")
 	storage := storage.NewRedisStorage(rdb)
 	lim := NewLimiter(storage)
 
-	key := "apikey:test"
+	key := uuid.New().String()
 	assert.False(t, lim.IsBlocked(key), "Should not be blocked")
 }

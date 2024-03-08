@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
-	"github.com/andrelmm/goexpert-go-rate-limiter/pkg/limiter"
-	"github.com/andrelmm/goexpert-go-rate-limiter/pkg/middleware"
-	"github.com/andrelmm/goexpert-go-rate-limiter/pkg/storage"
+	"github.com/andrelmm/goexpert-go-rate-limiter/limiter"
+	"github.com/andrelmm/goexpert-go-rate-limiter/middleware"
+	"github.com/andrelmm/goexpert-go-rate-limiter/storage"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	"github.com/joho/godotenv"

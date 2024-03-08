@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"github.com/andrelmm/goexpert-go-rate-limiter/pkg/limiter"
+	"github.com/andrelmm/goexpert-go-rate-limiter/limiter"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )

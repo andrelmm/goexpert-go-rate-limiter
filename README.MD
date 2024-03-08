@@ -45,6 +45,14 @@ The rate limiter middleware is applied to all routes by default. It checks the r
 ### Storage
 The storage package provides an interface for interacting with Redis. It includes methods for getting, setting, and manipulating data stored in Redis.
 
+### Testing
+
+To run the limiter tests, navigate to the limiter folder and execute the following command:
+
+```
+go test -v
+```
+
 ### Running the Application Locally using Docker
 
 To run the application locally using Docker, execute the following commands:
