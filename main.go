@@ -1,8 +1,10 @@
-package server
+package main
 
 import (
+	"context"
 	"github.com/andrelmm/goexpert-go-rate-limiter/pkg/limiter"
 	"github.com/andrelmm/goexpert-go-rate-limiter/pkg/middleware"
+	"github.com/andrelmm/goexpert-go-rate-limiter/pkg/storage"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	"github.com/joho/godotenv"
@@ -20,7 +22,9 @@ func main() {
 
 	rdb := connectToRedis()
 
-	rl := limiter.NewLimiter(rdb)
+	st := storage.NewRedisStorage(rdb)
+
+	rl := limiter.NewLimiter(st)
 
 	router := gin.Default()
 	router.Use(middleware.RateLimiterMiddleware(rl))
@@ -35,10 +39,18 @@ func main() {
 
 func connectToRedis() *redis.Client {
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
+		Addr:     "redis:6379",
 		Password: "",
 		DB:       0,
 	})
+
+	_, err := rdb.Ping(context.Background()).Result()
+	if err != nil {
+		log.Fatalf("Erro ao conectar-se ao Redis: %v", err)
+		panic(err)
+	}
+
+	log.Println("Conectado ao Redis com sucesso!")
 
 	return rdb
 }

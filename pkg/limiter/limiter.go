@@ -22,17 +22,14 @@ func NewLimiter(storage storage.Storage) *Limiter {
 	}
 }
 
-func (l *Limiter) CheckRateLimit(key string) bool {
-	limit, err := l.storage.Get(l.ctx, key).Int64()
+func (l *Limiter) CheckRateLimit(key string, isApiKey bool) bool {
+	limit, err := l.getRateLimit(isApiKey)
 	if err != nil {
-		limit = 0
+		log.Println("Error getting rate limit:", err)
+		return false
 	}
 
-	if limit == 0 {
-		return true
-	}
-
-	now := time.Now().Unix()
+	now := time.Now().UnixMilli()
 
 	_, err = l.storage.ZAdd(l.ctx, key, &redis.Z{Score: float64(now), Member: now}).Result()
 	if err != nil {
@@ -41,7 +38,16 @@ func (l *Limiter) CheckRateLimit(key string) bool {
 	}
 
 	rateLimitDuration, err := time.ParseDuration(os.Getenv("RATE_LIMIT_DURATION"))
-	l.storage.ZRemRangeByScore(l.ctx, key, "-inf", strconv.FormatInt(now-int64(rateLimitDuration), 10))
+	if err != nil {
+		log.Println("Error parsing rate limit duration:", err)
+		return false
+	}
+
+	_, err = l.storage.ZRemRangeByScore(l.ctx, key, "-inf", strconv.FormatInt(now-int64(rateLimitDuration.Milliseconds()), 10)).Result()
+	if err != nil {
+		log.Println("Error removing old requests from Redis:", err)
+		return false
+	}
 
 	count, err := l.storage.ZCard(l.ctx, key).Result()
 	if err != nil {
@@ -50,6 +56,22 @@ func (l *Limiter) CheckRateLimit(key string) bool {
 	}
 
 	return count <= limit
+}
+
+func (l *Limiter) getRateLimit(isAPIKey bool) (int64, error) {
+	if isAPIKey {
+		rateLimitToken, err := strconv.ParseInt(os.Getenv("RATE_LIMIT_TOKEN"), 10, 64)
+
+		if err != nil {
+			return 0, err
+		}
+		return rateLimitToken, nil
+	}
+	rateLimitIP, err := strconv.ParseInt(os.Getenv("RATE_LIMIT_IP"), 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	return rateLimitIP, nil
 }
 
 func (l *Limiter) Block(key string) {

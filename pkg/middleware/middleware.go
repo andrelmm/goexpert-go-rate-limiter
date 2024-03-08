@@ -20,7 +20,7 @@ func RateLimiterMiddleware(l *limiter.Limiter) gin.HandlerFunc {
 		// Check if the client has an API key. If it does, use it as the key for the rate limiter. If it doesn't, use the client's IP address
 		apiKey := c.GetHeader("API_KEY")
 		if apiKey != "" {
-			if !l.CheckRateLimit(apiKey) {
+			if !l.CheckRateLimit(apiKey, true) {
 				l.Block(apiKey)
 				c.JSON(http.StatusTooManyRequests, gin.H{
 					"error": "you have reached the maximum number of requests or actions allowed within a certain time frame",
@@ -30,7 +30,7 @@ func RateLimiterMiddleware(l *limiter.Limiter) gin.HandlerFunc {
 			}
 		} else {
 			ip := c.ClientIP()
-			if !l.CheckRateLimit(ip) {
+			if !l.CheckRateLimit(ip, false) {
 				l.Block(ip)
 				c.JSON(http.StatusTooManyRequests, gin.H{
 					"error": "you have reached the maximum number of requests or actions allowed within a certain time frame",
